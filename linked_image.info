@@ -1,0 +1,6 @@
+name = Linked Image
+description = Extends image formatter to use a custom link provided by a link field
+core = 7.x
+
+dependencies[] = image
+dependencies[] = link

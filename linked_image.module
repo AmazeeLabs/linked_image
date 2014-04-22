@@ -1,0 +1,124 @@
+<?php
+/**
+ * @file
+ *   Linked Image module
+ */
+
+/**
+ * Implements hook_field_formatter_info()
+ */
+function linked_image_field_formatter_info() {
+  $formatters = array(
+    'linked_image' => array(
+      'label' => t('Linked Image'),
+      'field types' => array('image'),
+      'settings' => array('image_style' => '', 'image_link' => ''),
+    ),
+  );
+
+  return $formatters;
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function linked_image_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  // Get the form from image module
+  $element = image_field_formatter_settings_form($field, $instance, $view_mode, $form_state, $form_state);
+
+  // Extends link types
+  $element['image_link']['#options'] = linked_image_get_link_types($instance['entity_type'], $instance['bundle']);
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ *
+ * @todo: test this!!!
+ */
+function linked_image_field_formatter_settings_summary($field, $instance, $view_mode) {
+  // Get the summary from image module.
+  $summary = image_field_formatter_settings_summary($field, $instance, $view_mode);
+
+  // If link type is other than default ones, it's not included, so we can add it
+  // at the end of summary
+  $settings = $instance['display'][$view_mode]['settings'];
+  if (!in_array($settings['image_link'], array('content', 'file'))) {
+    $field_instance = field_info_instance($instance['entity_type'], $settings['image_link'], $instance['bundle']);
+    $summary .= '<br />Linked using ' .t(
+      '@field_label (@field_name)',
+      array(
+        '@field_label' => $field_instance['label'], // @todo: i18n support?
+        '@field_name' => $field_instance['field_name'],
+      )
+    );
+  }
+
+  return $summary;
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function linked_image_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  // When a standard link type is selected or none, use the default implementation
+  if (empty($settings['image_link']) || in_array($settings['image_link'], array('content', 'file'))) {
+    $element = image_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display);
+  }
+  else {
+    // Use default implementation to render the image, but wrap everything inside
+    // link formatter
+    foreach ($items as $delta => $item) {
+      if (isset($link_file)) {
+        $uri = array(
+          'path' => file_create_url($item['uri']),
+          'options' => array(),
+        );
+      }
+      $element[$delta] = array(
+        '#theme' => 'image_formatter',
+        '#item' => $item,
+        '#image_style' => $display['settings']['image_style'],
+        '#path' => isset($uri) ? $uri : '',
+      );
+    }
+  }
+
+  return $element;
+}
+
+/**
+ * Get link options for a given entity type and bundle
+ *
+ * @param string $entity_type
+ *   Entity type
+ * @param string $bundle
+ *   Entity bundle
+ *
+ * @return array
+ *   List of link types that can be used
+ */
+function linked_image_get_link_types($entity_type, $bundle) {
+  // Default link types
+  $link_types = array(
+    'content' => t('Linked to content'),
+    'file' => t('Linked to file'),
+  );
+
+  $field_instances = field_info_instances($entity_type, $bundle);
+  foreach($field_instances as $field_instance) {
+    $field_info = field_info_field($field_instance['field_name']);
+    if ($field_info['type'] == 'link_field') {
+      $link_types[$field_instance['field_name']] = t(
+        '@field_label (@field_name)',
+        array(
+          '@field_label' => $field_instance['label'], // @todo: i18n support?
+          '@field_name' => $field_instance['field_name'],
+        )
+      );
+    }
+  }
+
+  return $link_types;
+}
