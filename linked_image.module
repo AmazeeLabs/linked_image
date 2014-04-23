@@ -30,7 +30,7 @@ function linked_image_field_formatter_settings_form($field, $instance, $view_mod
   // Extends link types
   $element['image_link']['#options'] = linked_image_get_link_types($instance['entity_type'], $instance['bundle']);
 
-g  if (count($element['image_link']['#options']) > 2) {
+  if (count($element['image_link']['#options']) > 2) {
     $element['image_link']['#description'] = t('When using a multi-value link field only the first value is used');
   }
 
