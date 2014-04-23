@@ -49,7 +49,7 @@ function linked_image_field_formatter_settings_summary($field, $instance, $view_
   // If link type is other than default ones, it's not included, so we can add it
   // at the end of summary
   $settings = $instance['display'][$view_mode]['settings'];
-  if (!in_array($settings['image_link'], array('content', 'file'))) {
+  if (!empty($settings['image_link']) && !in_array($settings['image_link'], array('content', 'file'))) {
     $field_instance = field_info_instance($instance['entity_type'], $settings['image_link'], $instance['bundle']);
     $summary .= '<br />Linked using ' .t(
       '@field_label (@field_name)',
